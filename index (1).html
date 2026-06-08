@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptPilot</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#0f172a,#1e293b,#2563eb);min-height:100vh;color:#fff}
+.container{max-width:900px;margin:auto;padding:40px 20px}
+.card{background:rgba(255,255,255,.1);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:28px}
+h1{text-align:center;font-size:3rem;margin-bottom:10px}
+.sub{text-align:center;opacity:.85;margin-bottom:30px}
+.step{display:none}.step.active{display:block;animation:fade .4s}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.option{padding:16px;border-radius:16px;background:rgba(255,255,255,.08);cursor:pointer;text-align:center}
+.option.selected{outline:2px solid #60a5fa}
+button{background:#3b82f6;color:white;border:none;padding:14px 20px;border-radius:14px;cursor:pointer}
+textarea{width:100%;padding:16px;border-radius:14px;border:none;min-height:120px}
+.badge{display:inline-block;padding:8px 12px;background:rgba(255,255,255,.12);border-radius:999px;margin:4px}
+.result{background:#fff;color:#111;padding:18px;border-radius:16px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>PromptPilot</h1>
+<div class="sub">실험 데이터를 기반으로 최적의 AI 프롬프트를 추천합니다</div>
+
+<div class="card">
+<div id="s1" class="step active">
+<h2>1. 어떤 활동을 하고 있나요?</h2>
+<div class="grid" id="activities"></div><br>
+<button onclick="next(2)">다음</button>
+</div>
+
+<div id="s2" class="step">
+<h2>2. 중요하게 생각하는 요소를 선택하세요 (중복 가능)</h2>
+<div class="grid">
+<div class="option focus" data-v="정확성">정확성</div>
+<div class="option focus" data-v="이해하기 쉬움">이해하기 쉬움</div>
+<div class="option focus" data-v="빠른 요약">빠른 요약</div>
+<div class="option focus" data-v="실제 활용">실제 활용</div>
+<div class="option focus" data-v="전문가 수준">전문가 수준</div>
+</div><br>
+<button onclick="next(3)">다음</button>
+</div>
+
+<div id="s3" class="step">
+<h2>3. AI에게 무엇을 물어보고 싶나요?</h2>
+<textarea id="topic" placeholder="예: 환경 위기는 어떻게 극복할 수 있을까?"></textarea><br><br>
+<button onclick="generate()">프롬프트 생성</button>
+</div>
+
+<div id="s4" class="step">
+<h2>생성된 프롬프트</h2>
+<div class="result" id="result"></div><br>
+<button onclick="copyPrompt()">복사하기</button>
+<h3>추천 이유</h3>
+<div id="reasons"></div>
+</div>
+</div>
+</div>
+
+<script>
+let activity="";
+const activities=["수행평가","탐구보고서","발표 준비","시험 공부","토론 준비","진로 탐색"];
+const wrap=document.getElementById('activities');
+activities.forEach(a=>{
+ let d=document.createElement('div');
+ d.className='option';
+ d.innerText=a;
+ d.onclick=()=>{document.querySelectorAll('#activities .option').forEach(x=>x.classList.remove('selected')); d.classList.add('selected'); activity=a;}
+ wrap.appendChild(d);
+});
+document.querySelectorAll('.focus').forEach(x=>x.onclick=()=>x.classList.toggle('selected'));
+
+function next(n){
+ document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+ document.getElementById('s'+n).classList.add('active');
+}
+
+function generate(){
+ const topic=document.getElementById('topic').value;
+ let cond=["표로 정리해줘"];
+ let reasons=["표 정리 → 구조·가독성 5.0점, 조건 완수도 5.0점"];
+ document.querySelectorAll('.focus.selected').forEach(f=>{
+  const v=f.dataset.v;
+  if(v==="정확성"){cond.push("신뢰할 수 있는 출처를 밝혀줘"); reasons.push("출처 포함 → 정확성 4.8점");}
+  if(v==="이해하기 쉬움"){cond.push("고등학생 수준으로 쉽게 설명해줘"); reasons.push("쉬운 설명 → 이해도 향상");}
+  if(v==="빠른 요약"){cond.push("핵심 내용을 표로 요약해줘"); reasons.push("표 요약 → 가독성 향상");}
+  if(v==="실제 활용"){cond.push("실제 사례를 함께 제시해줘"); reasons.push("예시 포함 → 실용성 향상");}
+  if(v==="전문가 수준"){cond.push("전문가 관점에서 설명해줘"); reasons.push("전문가 페르소나 → 내용 심화");}
+ });
+ const prompt=topic+"\\n\\n다음 조건에 맞춰 응답해줘.\\n\\n"+cond.map((c,i)=>(i+1)+". "+c).join("\\n");
+ document.getElementById('result').innerText=prompt;
+ document.getElementById('reasons').innerHTML=reasons.map(r=>"<div class='badge'>"+r+"</div>").join("");
+ next(4);
+}
+function copyPrompt(){navigator.clipboard.writeText(document.getElementById('result').innerText); alert('복사 완료!');}
+</script>
+</body>
+</html>
